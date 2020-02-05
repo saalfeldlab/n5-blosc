@@ -92,6 +92,15 @@ public class BloscCompression implements DefaultBlockReader, DefaultBlockWriter,
 		this.nthreads = nthreads;
 	}
 
+	public BloscCompression(final BloscCompression template) {
+
+		this.cname = template.cname;
+		this.clevel = template.clevel;
+		this.shuffle = template.shuffle;
+		this.blocksize = template.blocksize;
+		this.nthreads = template.nthreads;
+	}
+
 	@Override
 	public <T, B extends DataBlock<T>> void read(
 			final B dataBlock,
