@@ -65,9 +65,46 @@ public class BloscCompression implements DefaultBlockReader, DefaultBlockWriter,
 	private final int blocksize;
 
 	@CompressionParameter
-	private final int nthreads;
+	private int nthreads;
 
 	private static final transient JBlosc blosc = new JBlosc();
+
+
+	public String getCname() {
+
+		return cname;
+	}
+
+
+	public int getClevel() {
+
+		return clevel;
+	}
+
+
+	public int getShuffle() {
+
+		return shuffle;
+	}
+
+
+	public int getBlocksize() {
+
+		return blocksize;
+	}
+
+
+	public int getNthreads() {
+
+		return nthreads;
+	}
+
+
+	public void setNthreads(final int nthreads) {
+
+		this.nthreads = nthreads;
+	}
+
 
 	public BloscCompression() {
 
