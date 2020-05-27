@@ -1,14 +1,12 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<project xmlns="http://maven.apache.org/POM/4.0.0"
-	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
 	<modelVersion>4.0.0</modelVersion>
 
 	<parent>
 		<groupId>org.scijava</groupId>
 		<artifactId>pom-scijava</artifactId>
-		<relativePath />
 		<version>27.0.1</version>
+		<relativePath />
 	</parent>
 
 	<groupId>org.janelia.saalfeldlab</groupId>
@@ -30,41 +28,6 @@
 		</license>
 	</licenses>
 
-	<mailingLists>
-		<mailingList>
-			<name>ImageJ Forum</name>
-			<archive>http://forum.imagej.net/</archive>
-		</mailingList>
-	</mailingLists>
-
-	<scm>
-		<connection>scm:git:git://github.com/saalfedllab/n5</connection>
-		<developerConnection>scm:git:git@github.com:saalfeldlab/n5-blosc</developerConnection>
-		<tag>HEAD</tag>
-		<url>https://github.com/saalfeldlab/n5-blosc</url>
-	</scm>
-
-	<issueManagement>
-		<system>GitHub</system>
-		<url>https://github.com/saalfedlab/n5-blosc/issues</url>
-	</issueManagement>
-
-	<ciManagement>
-		<system>Travis CI</system>
-		<url>https://travis-ci.org/saalfeldlab/n5-blosc</url>
-	</ciManagement>
-
-	<properties>
-		<package-name>org.janelia.saalfeldlab</package-name>
-
-		<license.licenseName>bsd_2</license.licenseName>
-		<license.projectName>Not HDF5</license.projectName>
-		<license.organizationName>Saalfeld Lab</license.organizationName>
-		<license.copyrightOwners>Stephan Saalfeld</license.copyrightOwners>
-
-		<scijava.jvm.build.version>[1.8.0-101,11]</scijava.jvm.build.version>
-	</properties>
-
 	<developers>
 		<developer>
 			<id>axtimwalde</id>
@@ -81,7 +44,6 @@
 			</roles>
 		</developer>
 	</developers>
-
 	<contributors>
 		<contributor>
 			<name>Stephan Saalfeld</name>
@@ -91,54 +53,77 @@
 		</contributor>
 	</contributors>
 
-	<repositories>
-		<repository>
-			<id>imagej.public</id>
-			<url>https://maven.scijava.org/content/groups/public</url>
-		</repository>
-	</repositories>
+	<mailingLists>
+		<mailingList>
+			<name>Image.sc Forum</name>
+			<archive>https://forum.image.sc/tag/n5</archive>
+		</mailingList>
+	</mailingLists>
+
+	<scm>
+		<connection>scm:git:git://github.com/saalfeldlab/n5-blosc</connection>
+		<developerConnection>scm:git:git@github.com:saalfeldlab/n5-blosc</developerConnection>
+		<tag>HEAD</tag>
+		<url>https://github.com/saalfeldlab/n5-blosc</url>
+	</scm>
+	<issueManagement>
+		<system>GitHub</system>
+		<url>https://github.com/saalfedlab/n5-blosc/issues</url>
+	</issueManagement>
+	<ciManagement>
+		<system>Travis CI</system>
+		<url>https://travis-ci.com/saalfeldlab/n5-blosc</url>
+	</ciManagement>
+
+	<properties>
+		<package-name>org.janelia.saalfeldlab.n5.blosc</package-name>
+
+		<license.licenseName>bsd_2</license.licenseName>
+		<license.projectName>Not HDF5</license.projectName>
+		<license.organizationName>Saalfeld Lab</license.organizationName>
+		<license.copyrightOwners>Stephan Saalfeld</license.copyrightOwners>
+
+		<scijava.jvm.build.version>[1.8.0-101,11]</scijava.jvm.build.version>
+
+		<!-- NB: Deploy releases to the SciJava Maven repository. -->
+		<releaseProfiles>deploy-to-scijava</releaseProfiles>
+
+		<n5.version>2.2.0</n5.version>
+		<jblosc.version>1.0.1</jblosc.version>
+	</properties>
 
 	<dependencies>
 		<dependency>
 			<groupId>org.janelia.saalfeldlab</groupId>
 			<artifactId>n5</artifactId>
-			<version>2.1.3</version>
+			<version>${n5.version}</version>
 		</dependency>
 		<dependency>
 			<groupId>org.lasersonlab</groupId>
 			<artifactId>jblosc</artifactId>
-			<version>1.0.1</version>
+			<version>${jblosc.version}</version>
 		</dependency>
-
 
 		<!-- Test dependencies -->
 		<dependency>
 			<groupId>org.janelia.saalfeldlab</groupId>
 			<artifactId>n5</artifactId>
-			<version>2.1.1</version>
-			<type>test-jar</type>
+			<version>${n5.version}</version>
+			<classifier>tests</classifier>
 			<scope>test</scope>
 		</dependency>
 	</dependencies>
 
+	<repositories>
+		<repository>
+			<id>scijava.public</id>
+			<url>https://maven.scijava.org/content/groups/public</url>
+		</repository>
+	</repositories>
+
 	<build>
 		<pluginManagement>
 			<plugins>
-				<plugin>
-					<groupId>org.apache.maven.plugins</groupId>
-					<artifactId>maven-compiler-plugin</artifactId>
-					<configuration>
-						<source>1.8</source>
-						<target>1.8</target>
-					</configuration>
-				</plugin>
-				<plugin>
-					<artifactId>maven-deploy-plugin</artifactId>
-					<version>2.8.1</version>
-					<configuration>
-						<altDeploymentRepository>internal.repo::default::file://${deploy.path}</altDeploymentRepository>
-					</configuration>
-				</plugin>
 				<plugin>
 					<artifactId>maven-resources-plugin</artifactId>
 					<executions>
@@ -166,12 +151,4 @@
 			</plugins>
 		</pluginManagement>
 	</build>
-
-	<distributionManagement>
-		<repository>
-			<id>local-maven-repo</id>
-			<name>Local Maven Repository</name>
-			<url>file://${deploy.path}</url>
-		</repository>
-	</distributionManagement>
 </project>
