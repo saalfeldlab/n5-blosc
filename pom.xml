@@ -88,9 +88,8 @@
 		<!-- NB: Deploy releases to the SciJava Maven repository. -->
 		<releaseProfiles>deploy-to-scijava</releaseProfiles>
 
-		<n5.version>2.1.3</n5.version>
+		<n5.version>2.2.0</n5.version>
 		<jblosc.version>1.0.1</jblosc.version>
-		<n5.version>2.1.1</n5.version>
 	</properties>
 
 	<dependencies>
