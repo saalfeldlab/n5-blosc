@@ -27,20 +27,28 @@ package org.janelia.saalfeldlab.n5.blosc;
 
 import static org.junit.Assert.fail;
 
+import java.io.File;
 import java.io.IOException;
 import java.lang.reflect.Field;
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.nio.file.Files;
 import java.util.Arrays;
-import java.util.HashMap;
+import java.util.Map;
 
 import org.blosc.JBlosc;
 import org.janelia.saalfeldlab.n5.AbstractN5Test;
 import org.janelia.saalfeldlab.n5.Compression;
 import org.janelia.saalfeldlab.n5.DataType;
 import org.janelia.saalfeldlab.n5.DatasetAttributes;
+import org.janelia.saalfeldlab.n5.N5FSReader;
 import org.janelia.saalfeldlab.n5.N5FSWriter;
+import org.janelia.saalfeldlab.n5.N5Reader;
 import org.janelia.saalfeldlab.n5.N5Writer;
 import org.junit.Assert;
 import org.junit.Test;
+
+import com.google.gson.GsonBuilder;
 
 /**
  * Lazy {@link BloscCompression} test using the abstract base class.
@@ -49,15 +57,45 @@ import org.junit.Test;
  */
 public class BloscCompressionTest extends AbstractN5Test {
 
-	static private String testDirPath = System.getProperty("user.home") + "/tmp/n5-test";
-
-	/**
-	 * @throws IOException
-	 */
 	@Override
-	protected N5Writer createN5Writer() throws IOException {
+	protected N5Reader createN5Reader(String location, GsonBuilder gson) throws IOException, URISyntaxException {
 
-		return new N5FSWriter(testDirPath);
+		return new N5FSReader(location, gson);
+	}
+
+	@Override
+	protected N5Writer createN5Writer(String location, GsonBuilder gson) throws IOException, URISyntaxException {
+
+		return new N5FSWriter(location, gson);
+	}
+
+	@Override
+	protected String tempN5Location() throws URISyntaxException {
+
+		final String basePath = new File(tempN5PathName()).toURI().normalize().getPath();
+		return new URI("file", null, basePath, null).toString();
+	}
+
+	private static String tempN5PathName() {
+
+		try {
+			final File tmpFile = Files.createTempDirectory("n5-test-").toFile();
+			tmpFile.deleteOnExit();
+			return tmpFile.getCanonicalPath();
+		} catch (final Exception e) {
+			throw new RuntimeException(e);
+		}
+	}
+
+	@Override protected N5Writer createN5Writer() throws IOException, URISyntaxException {
+
+		return new N5FSWriter(tempN5Location(), new GsonBuilder()) {
+			@Override public void close() {
+
+				super.close();
+				remove();
+			}
+		};
 	}
 
 	@Override
@@ -68,68 +106,57 @@ public class BloscCompressionTest extends AbstractN5Test {
 	}
 
 	@Test
-	public void testDefaultNThreads() {
+	public void testDefaultNThreads() throws IOException, URISyntaxException {
 
 		final String bloscDatasetName = datasetName + "-blocsnthreadstest";
-		try {
-			n5.createDataset(
-					bloscDatasetName,
-					dimensions,
-					blockSize,
-					DataType.UINT64,
+		try (N5Writer n5 = createN5Writer()) {
+
+			n5.createDataset( bloscDatasetName, dimensions, blockSize, DataType.UINT64,
 					new BloscCompression(
 							"blosclz",
 							6,
 							BloscCompression.NOSHUFFLE,
 							0,
 							10));
-		} catch (final IOException e) {
-			fail(e.getMessage());
-		}
 
-		if (!n5.exists(bloscDatasetName))
-			fail("Dataset does not exist");
+			if (!n5.exists(bloscDatasetName))
+				fail("Dataset does not exist");
 
-		try {
-			final DatasetAttributes info = n5.getDatasetAttributes(bloscDatasetName);
-			Assert.assertArrayEquals(dimensions, info.getDimensions());
-			Assert.assertArrayEquals(blockSize, info.getBlockSize());
-			Assert.assertEquals(DataType.UINT64, info.getDataType());
-			Assert.assertEquals(BloscCompression.class, info.getCompression().getClass());
+			try {
+				final DatasetAttributes info = n5.getDatasetAttributes(bloscDatasetName);
+				Assert.assertArrayEquals(dimensions, info.getDimensions());
+				Assert.assertArrayEquals(blockSize, info.getBlockSize());
+				Assert.assertEquals(DataType.UINT64, info.getDataType());
+				Assert.assertEquals(BloscCompression.class, info.getCompression().getClass());
 
-			@SuppressWarnings("unchecked")
-			final HashMap<String, Object> map = n5.getAttribute(bloscDatasetName, "compression", HashMap.class);
-			Assert.assertEquals(10, ((Double)map.get("nthreads")).intValue());
-			Field nThreadsField = BloscCompression.class.getDeclaredField("nthreads");
-			nThreadsField.setAccessible(true);
-			Assert.assertEquals(10, nThreadsField.get(info.getCompression()));
+				@SuppressWarnings("unchecked")
+				final Map<String, Object> map = n5.getAttribute(bloscDatasetName, "compression", Map.class);
+				Assert.assertEquals(10, ((Double) map.get("nthreads")).intValue());
+				Field nThreadsField = BloscCompression.class.getDeclaredField("nthreads");
+				nThreadsField.setAccessible(true);
+				Assert.assertEquals(10, nThreadsField.get(info.getCompression()));
 
-			map.remove("nthreads");
-			map.put("clevel", ((Double)map.get("clevel")).intValue());
-			map.put("blocksize", ((Double)map.get("blocksize")).intValue());
-			map.put("shuffle", ((Double)map.get("shuffle")).intValue());
-			n5.setAttribute(bloscDatasetName, "compression", map);
+				map.remove("nthreads");
+				map.put("clevel", ((Double) map.get("clevel")).intValue());
+				map.put("blocksize", ((Double) map.get("blocksize")).intValue());
+				map.put("shuffle", ((Double) map.get("shuffle")).intValue());
+				n5.setAttribute(bloscDatasetName, "compression", map);
 
-			final DatasetAttributes info2 = n5.getDatasetAttributes(bloscDatasetName);
-			Assert.assertArrayEquals(dimensions, info2.getDimensions());
-			Assert.assertArrayEquals(blockSize, info2.getBlockSize());
-			Assert.assertEquals(DataType.UINT64, info2.getDataType());
-			Assert.assertEquals(BloscCompression.class, info2.getCompression().getClass());
-			nThreadsField = BloscCompression.class.getDeclaredField("nthreads");
-			nThreadsField.setAccessible(true);
-			Assert.assertEquals(1, nThreadsField.get(info2.getCompression()));
-		} catch (final IOException e) {
-			fail("Dataset info cannot be opened");
-			e.printStackTrace();
-		} catch (final IllegalAccessException | IllegalArgumentException | NoSuchFieldException e) {
-			fail("Cannot access nthreads field");
-			e.printStackTrace();
-		}
+				final DatasetAttributes info2 = n5.getDatasetAttributes(bloscDatasetName);
+				Assert.assertArrayEquals(dimensions, info2.getDimensions());
+				Assert.assertArrayEquals(blockSize, info2.getBlockSize());
+				Assert.assertEquals(DataType.UINT64, info2.getDataType());
+				Assert.assertEquals(BloscCompression.class, info2.getCompression().getClass());
+				nThreadsField = BloscCompression.class.getDeclaredField("nthreads");
+				nThreadsField.setAccessible(true);
+				Assert.assertEquals(1, nThreadsField.get(info2.getCompression()));
 
-		try {
-			n5.remove(bloscDatasetName);
-		} catch (final IOException e) {
-			fail("Dataset info cannot be removed");
+			} catch (final IllegalAccessException | IllegalArgumentException | NoSuchFieldException e) {
+				fail("Cannot access nthreads field");
+				e.printStackTrace();
+			}
+
 		}
 	}
+
 }
