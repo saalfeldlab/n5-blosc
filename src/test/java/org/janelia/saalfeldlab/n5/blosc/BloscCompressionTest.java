@@ -29,6 +29,7 @@ import static org.junit.Assert.fail;
 
 import java.io.IOException;
 import java.lang.reflect.Field;
+import java.nio.file.Files;
 import java.util.Arrays;
 import java.util.HashMap;
 
@@ -49,7 +50,15 @@ import org.junit.Test;
  */
 public class BloscCompressionTest extends AbstractN5Test {
 
-	static private String testDirPath = System.getProperty("user.home") + "/tmp/n5-test";
+	private static String testDirPath = createTestDirPath("n5-test");
+
+	private static String createTestDirPath(String dirName) {
+		try {
+			return Files.createTempDirectory(dirName).toString();
+		} catch (IOException exc) {
+			return System.getProperty("user.home") + "/tmp/" + dirName;
+		}
+	}
 
 	/**
 	 * @throws IOException
