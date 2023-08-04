@@ -57,14 +57,24 @@ import com.google.gson.GsonBuilder;
  */
 public class BloscCompressionTest extends AbstractN5Test {
 
+	private static String testDirPath = createTestDirPath("n5-test");
+
+	private static String createTestDirPath(final String dirName) {
+		try {
+			return Files.createTempDirectory(dirName).toString();
+		} catch (final IOException exc) {
+			return System.getProperty("user.home") + "/tmp/" + dirName;
+		}
+	}
+
 	@Override
-	protected N5Reader createN5Reader(String location, GsonBuilder gson) throws IOException, URISyntaxException {
+	protected N5Reader createN5Reader(final String location, final GsonBuilder gson) throws IOException, URISyntaxException {
 
 		return new N5FSReader(location, gson);
 	}
 
 	@Override
-	protected N5Writer createN5Writer(String location, GsonBuilder gson) throws IOException, URISyntaxException {
+	protected N5Writer createN5Writer(final String location, final GsonBuilder gson) throws IOException, URISyntaxException {
 
 		return new N5FSWriter(location, gson);
 	}
