@@ -95,7 +95,7 @@
 		<maven-enforcer-plugin.version>3.0.0-M3</maven-enforcer-plugin.version>
 		<jacoco-maven-plugin.version>0.8.6</jacoco-maven-plugin.version>
 
-		<n5.version>3.0.0</n5.version>
+		<n5.version>3.0.2</n5.version>
 	</properties>
 
 	<dependencies>
