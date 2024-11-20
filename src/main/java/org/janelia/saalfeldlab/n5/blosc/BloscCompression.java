@@ -65,6 +65,9 @@ public class BloscCompression implements DefaultBlockReader, DefaultBlockWriter,
 	private final int blocksize;
 
 	@CompressionParameter
+	private final int typesize;
+
+	@CompressionParameter
 	private int nthreads;
 
 	private static final transient JBlosc blosc = new JBlosc();
@@ -93,6 +96,12 @@ public class BloscCompression implements DefaultBlockReader, DefaultBlockWriter,
 		return blocksize;
 	}
 
+	public int getTypesize() {
+
+		return typesize;
+	}
+
+
 
 	public int getNthreads() {
 
@@ -112,7 +121,24 @@ public class BloscCompression implements DefaultBlockReader, DefaultBlockWriter,
 		this.clevel = 6;
 		this.shuffle = NOSHUFFLE;
 		this.blocksize = 0; // auto
+		this.typesize = 1;
 		this.nthreads = 1;
+	}
+
+	public BloscCompression(
+			final String cname,
+			final int clevel,
+			final int shuffle,
+			final int blocksize,
+			final int typesize,
+			final int nthreads) {
+
+		this.cname = cname;
+		this.clevel = clevel;
+		this.shuffle = shuffle;
+		this.blocksize = blocksize;
+		this.typesize = typesize;
+		this.nthreads = nthreads;
 	}
 
 	public BloscCompression(
@@ -122,11 +148,7 @@ public class BloscCompression implements DefaultBlockReader, DefaultBlockWriter,
 			final int blocksize,
 			final int nthreads) {
 
-		this.cname = cname;
-		this.clevel = clevel;
-		this.shuffle = shuffle;
-		this.blocksize = blocksize;
-		this.nthreads = nthreads;
+		this(cname, clevel, shuffle, blocksize, 1, nthreads);
 	}
 
 	public BloscCompression(final BloscCompression template) {
@@ -135,6 +157,7 @@ public class BloscCompression implements DefaultBlockReader, DefaultBlockWriter,
 		this.clevel = template.clevel;
 		this.shuffle = template.shuffle;
 		this.blocksize = template.blocksize;
+		this.typesize = template.typesize;
 		this.nthreads = template.nthreads;
 	}
 
@@ -164,7 +187,7 @@ public class BloscCompression implements DefaultBlockReader, DefaultBlockWriter,
 
 		final ByteBuffer src = dataBlock.toByteBuffer();
 		final ByteBuffer dst = ByteBuffer.allocate(src.limit() + JBlosc.OVERHEAD);
-		JBlosc.compressCtx(clevel, shuffle, 1, src, src.limit(), dst, dst.limit(), cname, blocksize, nthreads);
+		JBlosc.compressCtx(clevel, shuffle, typesize, src, src.limit(), dst, dst.limit(), cname, blocksize, nthreads);
 		final BufferSizes sizes = blosc.cbufferSizes(dst);
 		final int dstSize = (int)sizes.getCbytes();
 		out.write(dst.array(), 0, dstSize);
