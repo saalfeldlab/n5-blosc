@@ -25,16 +25,23 @@
  */
 package org.janelia.saalfeldlab.n5.blosc;
 
+import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.fail;
 
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.lang.reflect.Field;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.nio.file.Files;
 import java.util.Arrays;
 import java.util.Map;
+import java.util.Random;
+import java.util.stream.IntStream;
 
 import org.blosc.JBlosc;
 import org.janelia.saalfeldlab.n5.AbstractN5Test;
@@ -45,7 +52,9 @@ import org.janelia.saalfeldlab.n5.N5FSReader;
 import org.janelia.saalfeldlab.n5.N5FSWriter;
 import org.janelia.saalfeldlab.n5.N5Reader;
 import org.janelia.saalfeldlab.n5.N5Writer;
+import org.janelia.saalfeldlab.n5.codec.Codec;
 import org.junit.Assert;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import com.google.gson.GsonBuilder;
@@ -169,4 +178,40 @@ public class BloscCompressionTest extends AbstractN5Test {
 		}
 	}
 
+	@Ignore("This unit test is ignored, since it can only be run on a machine with libblosc installed.")
+	@Test
+	public void testBloscCompressionEncodeDecode() throws IOException
+	{
+		Random random = new Random();
+
+		int n = 16;
+		byte[] inputData = new byte[n];
+		IntStream.range(0, n).forEach( i -> {
+			inputData[i] = (byte)(random.nextInt());
+		});
+		System.out.println("input data:" + Arrays.toString(inputData));
+
+       // encode
+		ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+		Codec.BytesCodec codec = new BloscCompression();
+		OutputStream encodedOutputStream = codec.encode(outputStream);
+		encodedOutputStream.write(inputData);
+		encodedOutputStream.flush();
+		encodedOutputStream.close();
+
+		byte[] encodedData = outputStream.toByteArray();
+		System.out.println( "encoded data: " + Arrays.toString(encodedData));
+
+        // decode
+		ByteArrayInputStream is = new ByteArrayInputStream(encodedData);
+		InputStream decodedIs = codec.decode(is);
+		byte[] decodedData = new byte[n];
+		int bytes = decodedIs.read(decodedData);
+		decodedIs.close();
+
+		System.out.println("read bytes:" + bytes);
+		System.out.println("decoded data:" + Arrays.toString(decodedData));
+
+		assertArrayEquals( inputData, decodedData );
+	}
 }
