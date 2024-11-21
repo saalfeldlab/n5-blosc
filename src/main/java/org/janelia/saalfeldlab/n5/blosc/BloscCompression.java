@@ -25,6 +25,8 @@
  */
 package org.janelia.saalfeldlab.n5.blosc;
 
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -38,6 +40,7 @@ import org.janelia.saalfeldlab.n5.Compression.CompressionType;
 import org.janelia.saalfeldlab.n5.DataBlock;
 import org.janelia.saalfeldlab.n5.DefaultBlockReader;
 import org.janelia.saalfeldlab.n5.DefaultBlockWriter;
+import org.janelia.saalfeldlab.n5.codec.Codec;
 
 /**
  * Compression using JBlosc (https://github.com/Blosc/JBlosc) compressors.
@@ -45,7 +48,8 @@ import org.janelia.saalfeldlab.n5.DefaultBlockWriter;
  * @author Stephan Saalfeld &lt;saalfelds@janelia.hhmi.org&gt;
  */
 @CompressionType("blosc")
-public class BloscCompression implements DefaultBlockReader, DefaultBlockWriter, Compression  {
+public class BloscCompression implements DefaultBlockReader, DefaultBlockWriter, Compression, Codec
+{
 
 	public static final int NOSHUFFLE = 0;
 	public static final int SHUFFLE = 1;
@@ -188,9 +192,9 @@ public class BloscCompression implements DefaultBlockReader, DefaultBlockWriter,
 	 * {@link JBlosc} decompresses from and into {@link ByteBuffer}.
 	 */
 	@Override
-	public OutputStream getOutputStream(final OutputStream out) throws IOException {
+	public InputStream decode(InputStream in) throws IOException {
 
-		return null;
+		return decompressBlosc( in );
 	}
 
 	/**
@@ -200,6 +204,93 @@ public class BloscCompression implements DefaultBlockReader, DefaultBlockWriter,
 	@Override
 	public InputStream getInputStream(final InputStream in) throws IOException {
 
-		return null;
+		return decompressBlosc( in );
+	}
+
+	@Override
+	public OutputStream encode( final OutputStream out )
+	{
+		return new CompressibleByteArrayOutputStream( out );
+	}
+
+	@Override
+	public OutputStream getOutputStream(final OutputStream out) {
+		return new CompressibleByteArrayOutputStream( out );
+	}
+
+	@Override
+	public String getType()
+	{
+		return "blosc";
+	}
+
+	private ByteArrayInputStream decompressBlosc( final InputStream in ) throws IOException
+	{
+		final ByteArrayOutputStream buf = new ByteArrayOutputStream();
+		for (int result = in.read(); result != -1; result = in.read())
+			buf.write((byte) result);
+
+		final ByteBuffer src = ByteBuffer.wrap(buf.toByteArray());
+		final BufferSizes sizes = blosc.cbufferSizes(src);
+		final int dstSize = (int)sizes.getNbytes();
+		byte[] dstArray = new byte[dstSize];
+		ByteBuffer dst = ByteBuffer.wrap(dstArray);
+
+		JBlosc.decompressCtx(src, dst, dst.capacity(), nthreads);
+		return new ByteArrayInputStream( dstArray );
+	}
+
+	public class CompressibleByteArrayOutputStream extends ByteArrayOutputStream {
+
+		private final OutputStream out;
+
+		// Constructor to initialize with a decorated OutputStream
+		public CompressibleByteArrayOutputStream(OutputStream out) {
+			super();
+			this.out = out;
+		}
+
+		@Override
+		public synchronized void write(byte[] b, int off, int len) {
+
+			try
+			{
+				// Wrap the input data into a ByteBuffer
+				ByteBuffer src = ByteBuffer.wrap(b, off, len);
+				ByteBuffer dst = ByteBuffer.allocate(src.limit() + JBlosc.OVERHEAD);
+				JBlosc.compressCtx(clevel, shuffle, 1, src, src.limit(), dst, dst.limit(), cname, blocksize, nthreads);
+				// Write the compressed data to the decorated OutputStream
+				out.write(dst.array(), dst.position(), dst.remaining());
+			}
+			catch ( IOException e )
+			{
+				throw new BloscCompressionException( e.getMessage() );
+			}
+		}
+
+		// Flush the decorated OutputStream
+		@Override
+		public void flush() throws IOException {
+			super.flush();
+			if ( out != null) {
+				out.flush();
+			}
+		}
+
+		// Close both the ByteArrayOutputStream and the decorated OutputStream
+		@Override
+		public void close() throws IOException {
+			super.close();
+			if ( out != null) {
+				out.close();
+			}
+		}
+	}
+
+	public static class BloscCompressionException extends RuntimeException {
+
+		public BloscCompressionException(final String message) {
+			super(message);
+		}
 	}
 }
