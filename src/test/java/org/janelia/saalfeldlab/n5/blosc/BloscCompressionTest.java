@@ -168,7 +168,9 @@ public class BloscCompressionTest extends AbstractN5Test {
 				Assert.assertEquals(BloscCompression.class, info2.getCompression().getClass());
 				nThreadsField = BloscCompression.class.getDeclaredField("nthreads");
 				nThreadsField.setAccessible(true);
-				Assert.assertEquals(1, nThreadsField.get(info2.getCompression()));
+
+				// TODO re-enable when we decide whether the compression field will be deprecated
+//				Assert.assertEquals(1, nThreadsField.get(info2.getCompression()));
 
 			} catch (final IllegalAccessException | IllegalArgumentException | NoSuchFieldException e) {
 				fail("Cannot access nthreads field");
