@@ -49,7 +49,7 @@ import org.janelia.saalfeldlab.n5.serialization.NameConfig;
  * @author Stephan Saalfeld &lt;saalfelds@janelia.hhmi.org&gt;
  */
 @CompressionType("blosc")
-@NameConfig.Name("blosc")
+@NameConfig.Name("blosc2")
 public class BloscCompression implements DefaultBlockReader, DefaultBlockWriter, Compression, Codec
 {
 
