@@ -25,19 +25,19 @@
  */
 package org.janelia.saalfeldlab.n5.blosc;
 
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.FilterOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.nio.ByteBuffer;
-
-import org.apache.commons.compress.utils.IOUtils;
 import org.blosc.BufferSizes;
 import org.blosc.JBlosc;
 import org.janelia.saalfeldlab.n5.Compression;
 import org.janelia.saalfeldlab.n5.Compression.CompressionType;
-import org.janelia.saalfeldlab.n5.DataBlock;
-import org.janelia.saalfeldlab.n5.DefaultBlockReader;
-import org.janelia.saalfeldlab.n5.DefaultBlockWriter;
+import org.janelia.saalfeldlab.n5.Splittable.InputStreamReadData;
+import org.janelia.saalfeldlab.n5.Splittable.ReadData;
 
 /**
  * Compression using JBlosc (https://github.com/Blosc/JBlosc) compressors.
@@ -45,7 +45,7 @@ import org.janelia.saalfeldlab.n5.DefaultBlockWriter;
  * @author Stephan Saalfeld &lt;saalfelds@janelia.hhmi.org&gt;
  */
 @CompressionType("blosc")
-public class BloscCompression implements DefaultBlockReader, DefaultBlockWriter, Compression  {
+public class BloscCompression implements Compression  {
 
 	public static final int NOSHUFFLE = 0;
 	public static final int SHUFFLE = 1;
@@ -138,32 +138,12 @@ public class BloscCompression implements DefaultBlockReader, DefaultBlockWriter,
 		this.nthreads = template.nthreads;
 	}
 
-	@Override
-	public <T, B extends DataBlock<T>> void read(
-			final B dataBlock,
-			final InputStream in) throws IOException {
+	// TODO: put back a de/serialization redirection via Compression (/BytesCodec?)
+	//       to be able to use write(byte[], OutputStream) directly
 
-		final ByteBuffer src = ByteBuffer.wrap(IOUtils.toByteArray(in));
-		final boolean isByte = dataBlock.getData() instanceof byte[];
-		final ByteBuffer dst;
-		if (isByte)
-			dst = dataBlock.toByteBuffer();
-		else {
-			final BufferSizes sizes = blosc.cbufferSizes(src);
-			final int dstSize = (int)sizes.getNbytes();
-			dst = ByteBuffer.allocateDirect(dstSize);
-		}
-		JBlosc.decompressCtx(src, dst, dst.capacity(), nthreads);
-		dataBlock.readData(dst);
-	}
-
-	@Override
-	public <T> void write(
-			final DataBlock<T> dataBlock,
-			final OutputStream out) throws IOException {
-
-		final ByteBuffer src = dataBlock.toByteBuffer();
-		final ByteBuffer dst = ByteBuffer.allocate(src.limit() + JBlosc.OVERHEAD);
+	public void write(final byte[] serialized, final OutputStream out) throws IOException {
+		final ByteBuffer src = ByteBuffer.wrap(serialized);
+		final ByteBuffer dst = ByteBuffer.allocate(serialized.length + JBlosc.OVERHEAD);
 		JBlosc.compressCtx(clevel, shuffle, 1, src, src.limit(), dst, dst.limit(), cname, blocksize, nthreads);
 		final BufferSizes sizes = blosc.cbufferSizes(dst);
 		final int dstSize = (int)sizes.getCbytes();
@@ -171,35 +151,41 @@ public class BloscCompression implements DefaultBlockReader, DefaultBlockWriter,
 		out.flush();
 	}
 
-	@Override
-	public BloscCompression getReader() {
+	public byte[] read(final ReadData readData) throws IOException {
+		return read(readData, null);
+	}
 
-		return this;
+	public byte[] read(final ReadData readData, final byte[] buffer) throws IOException {
+		final ByteBuffer src = ByteBuffer.wrap(readData.allBytes());
+		final ByteBuffer dst;
+		if (buffer != null) {
+			dst = ByteBuffer.wrap(buffer);
+		} else {
+			final BufferSizes sizes = blosc.cbufferSizes(src);
+			final int dstSize = (int)sizes.getNbytes();
+			dst = ByteBuffer.allocate(dstSize);
+		}
+		JBlosc.decompressCtx(src, dst, dst.capacity(), nthreads);
+		return dst.array();
 	}
 
 	@Override
-	public BloscCompression getWriter() {
-
-		return this;
+	public OutputStream getOutputStream(final OutputStream outputStream) throws IOException {
+		final ByteArrayOutputStream bytes = new ByteArrayOutputStream(8192);
+		return new FilterOutputStream( bytes ) {
+			@Override
+			public void close() throws IOException {
+				super.close();
+				BloscCompression.this.write(bytes.toByteArray(), outputStream);
+				outputStream.close();
+			}
+		};
 	}
 
-	/**
-	 * Not used in this implementation of {@link DefaultBlockWriter} as
-	 * {@link JBlosc} decompresses from and into {@link ByteBuffer}.
-	 */
-	@Override
-	public OutputStream getOutputStream(final OutputStream out) throws IOException {
-
-		return null;
-	}
-
-	/**
-	 * Not used in this implementation of {@link DefaultBlockReader} as
-	 * {@link JBlosc} compresses from and into {@link ByteBuffer}.
-	 */
 	@Override
 	public InputStream getInputStream(final InputStream in) throws IOException {
-
-		return null;
+		final byte[] bytes = read(new InputStreamReadData(in));
+		in.close();
+		return new ByteArrayInputStream(bytes);
 	}
 }
