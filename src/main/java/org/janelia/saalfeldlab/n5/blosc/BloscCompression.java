@@ -25,19 +25,13 @@
  */
 package org.janelia.saalfeldlab.n5.blosc;
 
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.FilterOutputStream;
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
 import java.nio.ByteBuffer;
 import org.blosc.BufferSizes;
 import org.blosc.JBlosc;
 import org.janelia.saalfeldlab.n5.Compression;
 import org.janelia.saalfeldlab.n5.Compression.CompressionType;
-import org.janelia.saalfeldlab.n5.Splittable.InputStreamReadData;
-import org.janelia.saalfeldlab.n5.Splittable.ReadData;
+import org.janelia.saalfeldlab.n5.readdata.ReadData;
 
 /**
  * Compression using JBlosc (https://github.com/Blosc/JBlosc) compressors.
@@ -138,28 +132,11 @@ public class BloscCompression implements Compression  {
 		this.nthreads = template.nthreads;
 	}
 
-	// TODO: put back a de/serialization redirection via Compression (/BytesCodec?)
-	//       to be able to use write(byte[], OutputStream) directly
-
-	public void write(final byte[] serialized, final OutputStream out) throws IOException {
-		final ByteBuffer src = ByteBuffer.wrap(serialized);
-		final ByteBuffer dst = ByteBuffer.allocate(serialized.length + JBlosc.OVERHEAD);
-		JBlosc.compressCtx(clevel, shuffle, 1, src, src.limit(), dst, dst.limit(), cname, blocksize, nthreads);
-		final BufferSizes sizes = blosc.cbufferSizes(dst);
-		final int dstSize = (int)sizes.getCbytes();
-		out.write(dst.array(), 0, dstSize);
-		out.flush();
-	}
-
-	public byte[] read(final ReadData readData) throws IOException {
-		return read(readData, null);
-	}
-
-	public byte[] read(final ReadData readData, final byte[] buffer) throws IOException {
-		final ByteBuffer src = ByteBuffer.wrap(readData.allBytes());
+	private byte[] decode(final byte[] data, final byte[] dstBuffer) {
+		final ByteBuffer src = ByteBuffer.wrap(data);
 		final ByteBuffer dst;
-		if (buffer != null) {
-			dst = ByteBuffer.wrap(buffer);
+		if (dstBuffer != null) {
+			dst = ByteBuffer.wrap(dstBuffer);
 		} else {
 			final BufferSizes sizes = blosc.cbufferSizes(src);
 			final int dstSize = (int)sizes.getNbytes();
@@ -170,22 +147,18 @@ public class BloscCompression implements Compression  {
 	}
 
 	@Override
-	public OutputStream getOutputStream(final OutputStream outputStream) throws IOException {
-		final ByteArrayOutputStream bytes = new ByteArrayOutputStream(8192);
-		return new FilterOutputStream( bytes ) {
-			@Override
-			public void close() throws IOException {
-				super.close();
-				BloscCompression.this.write(bytes.toByteArray(), outputStream);
-				outputStream.close();
-			}
-		};
+	public ReadData decode(final ReadData readData, final int decodedLength) throws IOException {
+		return ReadData.from(decode(readData.allBytes(), null)).order(readData.order());
 	}
 
 	@Override
-	public InputStream getInputStream(final InputStream in) throws IOException {
-		final byte[] bytes = read(new InputStreamReadData(in));
-		in.close();
-		return new ByteArrayInputStream(bytes);
+	public ReadData encode(final ReadData readData) throws IOException {
+		final byte[] serialized = readData.allBytes();
+		final ByteBuffer src = ByteBuffer.wrap(serialized);
+		final ByteBuffer dst = ByteBuffer.allocate(serialized.length + JBlosc.OVERHEAD);
+		JBlosc.compressCtx(clevel, shuffle, 1, src, src.limit(), dst, dst.limit(), cname, blocksize, nthreads);
+		final BufferSizes sizes = blosc.cbufferSizes(dst);
+		final int dstSize = (int)sizes.getCbytes();
+		return ReadData.from(dst.array(), 0, dstSize).order(readData.order());
 	}
 }
