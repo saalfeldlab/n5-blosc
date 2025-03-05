@@ -148,7 +148,7 @@ public class BloscCompression implements Compression  {
 
 	@Override
 	public ReadData decode(final ReadData readData, final int decodedLength) throws IOException {
-		return ReadData.from(decode(readData.allBytes(), null)).order(readData.order());
+		return ReadData.from(decode(readData.allBytes(), null));
 	}
 
 	@Override
@@ -159,6 +159,6 @@ public class BloscCompression implements Compression  {
 		JBlosc.compressCtx(clevel, shuffle, 1, src, src.limit(), dst, dst.limit(), cname, blocksize, nthreads);
 		final BufferSizes sizes = blosc.cbufferSizes(dst);
 		final int dstSize = (int)sizes.getCbytes();
-		return ReadData.from(dst.array(), 0, dstSize).order(readData.order());
+		return ReadData.from(dst.array(), 0, dstSize);
 	}
 }
