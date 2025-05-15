@@ -147,7 +147,7 @@ public class BloscCompression implements Compression  {
 	}
 
 	@Override
-	public ReadData decode(final ReadData readData, final int decodedLength) throws IOException {
+	public ReadData decode(final ReadData readData) throws IOException {
 		return ReadData.from(decode(readData.allBytes(), null));
 	}
 
