@@ -1,3 +1,5 @@
+[![Build Status](https://github.com/saalfeldlab/n5-blosc/actions/workflows/build.yml/badge.svg)](https://github.com/saalfeldlab/n5-blosc/actions/workflows/build.yml)
+
 [![Build Status](https://github.com/saalfeldlab/n5-blosc/actions/workflows/build-main.yml/badge.svg)](https://github.com/saalfeldlab/n5-blosc/actions/workflows/build-main.yml)
 
 # n5-blosc
