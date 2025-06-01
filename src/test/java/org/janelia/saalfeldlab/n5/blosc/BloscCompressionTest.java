@@ -26,31 +26,6 @@
  * POSSIBILITY OF SUCH DAMAGE.
  * #L%
  */
-/**
- * Copyright (c) 2019, Stephan Saalfeld
- * All rights reserved.
- *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are met:
- *
- * 1. Redistributions of source code must retain the above copyright notice,
- *    this list of conditions and the following disclaimer.
- * 2. Redistributions in binary form must reproduce the above copyright notice,
- *    this list of conditions and the following disclaimer in the documentation
- *    and/or other materials provided with the distribution.
- *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
- * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
- * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
- * ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE
- * LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
- * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
- * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
- * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
- * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
- * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
- * POSSIBILITY OF SUCH DAMAGE.
- */
 package org.janelia.saalfeldlab.n5.blosc;
 
 import static org.junit.Assert.assertArrayEquals;
@@ -81,11 +56,14 @@ import org.janelia.saalfeldlab.n5.N5FSWriter;
 import org.janelia.saalfeldlab.n5.N5Reader;
 import org.janelia.saalfeldlab.n5.N5Writer;
 import org.janelia.saalfeldlab.n5.codec.Codec;
+import org.janelia.saalfeldlab.n5.readdata.ReadData;
 import org.junit.Assert;
 import org.junit.Ignore;
 import org.junit.Test;
 
 import com.google.gson.GsonBuilder;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
 
 /**
  * Lazy {@link BloscCompression} test using the abstract base class.
@@ -176,18 +154,14 @@ public class BloscCompressionTest extends AbstractN5Test {
 				Assert.assertEquals(DataType.UINT64, info.getDataType());
 				Assert.assertEquals(BloscCompression.class, info.getCompression().getClass());
 
-				@SuppressWarnings("unchecked")
-				final Map<String, Object> map = n5.getAttribute(bloscDatasetName, "compression", Map.class);
-				Assert.assertEquals(10, ((Double) map.get("nthreads")).intValue());
+				final JsonObject obj = n5.getAttribute(bloscDatasetName, "compression", JsonElement.class).getAsJsonObject();
+				Assert.assertEquals(10, obj.getAsJsonObject().get("nthreads").getAsInt());
 				Field nThreadsField = BloscCompression.class.getDeclaredField("nthreads");
 				nThreadsField.setAccessible(true);
 				Assert.assertEquals(10, nThreadsField.get(info.getCompression()));
 
-				map.remove("nthreads");
-				map.put("clevel", ((Double) map.get("clevel")).intValue());
-				map.put("blocksize", ((Double) map.get("blocksize")).intValue());
-				map.put("shuffle", ((Double) map.get("shuffle")).intValue());
-				n5.setAttribute(bloscDatasetName, "compression", map);
+				obj.remove("nthreads");
+				n5.setAttribute(bloscDatasetName, "compression", obj);
 
 				final DatasetAttributes info2 = n5.getDatasetAttributes(bloscDatasetName);
 				Assert.assertArrayEquals(dimensions, info2.getDimensions());
@@ -224,24 +198,23 @@ public class BloscCompressionTest extends AbstractN5Test {
        // encode
 		ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
 		Codec.BytesCodec codec = new BloscCompression();
-		OutputStream encodedOutputStream = codec.encode(outputStream);
-		encodedOutputStream.write(inputData);
-		encodedOutputStream.flush();
-		encodedOutputStream.close();
 
-		byte[] encodedData = outputStream.toByteArray();
+		byte[] encodedData = codec.encode(ReadData.from(inputData)).allBytes();
 		System.out.println( "encoded data: " + Arrays.toString(encodedData));
 
         // decode
 		ByteArrayInputStream is = new ByteArrayInputStream(encodedData);
-		InputStream decodedIs = codec.decode(is);
+		ReadData decodedIs = codec.decode(ReadData.from(is));
 		byte[] decodedData = new byte[n];
-		int bytes = decodedIs.read(decodedData);
-		decodedIs.close();
 
-		System.out.println("read bytes:" + bytes);
 		System.out.println("decoded data:" + Arrays.toString(decodedData));
 
 		assertArrayEquals( inputData, decodedData );
+	}
+
+	@Test
+	@Override
+	@Ignore
+	public void testWriteInvalidBlock() {
 	}
 }

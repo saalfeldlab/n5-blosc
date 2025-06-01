@@ -68,6 +68,7 @@ import org.janelia.saalfeldlab.n5.serialization.NameConfig;
  * @author Stephan Saalfeld &lt;saalfelds@janelia.hhmi.org&gt;
  */
 @CompressionType("blosc")
+@NameConfig.Name("blosc")
 public class BloscCompression implements Compression  {
 
 	public static final int NOSHUFFLE = 0;
