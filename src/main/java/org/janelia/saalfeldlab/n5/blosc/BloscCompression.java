@@ -206,12 +206,12 @@ public class BloscCompression implements Compression  {
 	}
 
 	@Override
-	public ReadData decode(final ReadData readData) throws IOException {
+	public ReadData decode(final ReadData readData) {
 		return ReadData.from(decode(readData.allBytes(), null));
 	}
 
 	@Override
-	public ReadData encode(final ReadData readData) throws IOException {
+	public ReadData encode(final ReadData readData) {
 		final byte[] serialized = readData.allBytes();
 		final ByteBuffer src = ByteBuffer.wrap(serialized);
 		final ByteBuffer dst = ByteBuffer.allocate(serialized.length + JBlosc.OVERHEAD);

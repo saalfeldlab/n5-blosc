@@ -29,6 +29,7 @@
 package org.janelia.saalfeldlab.n5.blosc;
 
 import static org.junit.Assert.assertArrayEquals;
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
 
 import java.io.ByteArrayInputStream;
@@ -56,6 +57,7 @@ import org.janelia.saalfeldlab.n5.N5FSWriter;
 import org.janelia.saalfeldlab.n5.N5Reader;
 import org.janelia.saalfeldlab.n5.N5Writer;
 import org.janelia.saalfeldlab.n5.codec.Codec;
+import org.janelia.saalfeldlab.n5.codec.Codec.BytesCodec;
 import org.janelia.saalfeldlab.n5.readdata.ReadData;
 import org.junit.Assert;
 import org.junit.Ignore;
@@ -131,7 +133,7 @@ public class BloscCompressionTest extends AbstractN5Test {
 	}
 
 	@Test
-	public void testDefaultNThreads() throws IOException, URISyntaxException {
+	public void testDefaultNThreads() throws IOException, URISyntaxException, NoSuchFieldException, SecurityException, IllegalArgumentException, IllegalAccessException {
 
 		final String bloscDatasetName = datasetName + "-blocsnthreadstest";
 		try (N5Writer n5 = createN5Writer()) {
@@ -147,38 +149,33 @@ public class BloscCompressionTest extends AbstractN5Test {
 			if (!n5.exists(bloscDatasetName))
 				fail("Dataset does not exist");
 
-			try {
 				final DatasetAttributes info = n5.getDatasetAttributes(bloscDatasetName);
-				Assert.assertArrayEquals(dimensions, info.getDimensions());
-				Assert.assertArrayEquals(blockSize, info.getBlockSize());
-				Assert.assertEquals(DataType.UINT64, info.getDataType());
-				Assert.assertEquals(BloscCompression.class, info.getCompression().getClass());
+
+				BytesCodec[] codecs = info.getCodecs();
+				assertEquals( 1, codecs.length);
+				BytesCodec compression = codecs[0];
+				assertEquals(BloscCompression.class, compression.getClass());
 
 				final JsonObject obj = n5.getAttribute(bloscDatasetName, "compression", JsonElement.class).getAsJsonObject();
 				Assert.assertEquals(10, obj.getAsJsonObject().get("nthreads").getAsInt());
 				Field nThreadsField = BloscCompression.class.getDeclaredField("nthreads");
 				nThreadsField.setAccessible(true);
-				Assert.assertEquals(10, nThreadsField.get(info.getCompression()));
+				Assert.assertEquals(10, nThreadsField.get(compression));
 
 				obj.remove("nthreads");
 				n5.setAttribute(bloscDatasetName, "compression", obj);
 
 				final DatasetAttributes info2 = n5.getDatasetAttributes(bloscDatasetName);
-				Assert.assertArrayEquals(dimensions, info2.getDimensions());
-				Assert.assertArrayEquals(blockSize, info2.getBlockSize());
-				Assert.assertEquals(DataType.UINT64, info2.getDataType());
-				Assert.assertEquals(BloscCompression.class, info2.getCompression().getClass());
+				BytesCodec[] codecs2 = info2.getCodecs();
+				assertEquals(1, codecs2.length);
+				BytesCodec compression2 = codecs2[0];
+
+				Assert.assertEquals(BloscCompression.class, compression2.getClass());
 				nThreadsField = BloscCompression.class.getDeclaredField("nthreads");
 				nThreadsField.setAccessible(true);
 
 				// TODO re-enable when we decide whether the compression field will be deprecated
 //				Assert.assertEquals(1, nThreadsField.get(info2.getCompression()));
-
-			} catch (final IllegalAccessException | IllegalArgumentException | NoSuchFieldException e) {
-				fail("Cannot access nthreads field");
-				e.printStackTrace();
-			}
-
 		}
 	}
 
