@@ -56,8 +56,8 @@ import org.janelia.saalfeldlab.n5.N5FSReader;
 import org.janelia.saalfeldlab.n5.N5FSWriter;
 import org.janelia.saalfeldlab.n5.N5Reader;
 import org.janelia.saalfeldlab.n5.N5Writer;
+import org.janelia.saalfeldlab.n5.codec.BytesCodec;
 import org.janelia.saalfeldlab.n5.codec.Codec;
-import org.janelia.saalfeldlab.n5.codec.Codec.BytesCodec;
 import org.janelia.saalfeldlab.n5.readdata.ReadData;
 import org.junit.Assert;
 import org.junit.Ignore;
@@ -194,7 +194,7 @@ public class BloscCompressionTest extends AbstractN5Test {
 
        // encode
 		ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
-		Codec.BytesCodec codec = new BloscCompression();
+		BytesCodec codec = new BloscCompression();
 
 		byte[] encodedData = codec.encode(ReadData.from(inputData)).allBytes();
 		System.out.println( "encoded data: " + Arrays.toString(encodedData));
@@ -209,9 +209,4 @@ public class BloscCompressionTest extends AbstractN5Test {
 		assertArrayEquals( inputData, decodedData );
 	}
 
-	@Test
-	@Override
-	@Ignore
-	public void testWriteInvalidBlock() {
-	}
 }
