@@ -56,8 +56,7 @@ import org.janelia.saalfeldlab.n5.N5FSReader;
 import org.janelia.saalfeldlab.n5.N5FSWriter;
 import org.janelia.saalfeldlab.n5.N5Reader;
 import org.janelia.saalfeldlab.n5.N5Writer;
-import org.janelia.saalfeldlab.n5.codec.BytesCodec;
-import org.janelia.saalfeldlab.n5.codec.Codec;
+import org.janelia.saalfeldlab.n5.codec.DataCodecInfo;
 import org.janelia.saalfeldlab.n5.readdata.ReadData;
 import org.junit.Assert;
 import org.junit.Ignore;
@@ -151,9 +150,9 @@ public class BloscCompressionTest extends AbstractN5Test {
 
 				final DatasetAttributes info = n5.getDatasetAttributes(bloscDatasetName);
 
-				BytesCodec[] codecs = info.getCodecs();
+				final DataCodecInfo[] codecs = info.getDataCodecInfos();
 				assertEquals( 1, codecs.length);
-				BytesCodec compression = codecs[0];
+				DataCodecInfo compression = codecs[0];
 				assertEquals(BloscCompression.class, compression.getClass());
 
 				final JsonObject obj = n5.getAttribute(bloscDatasetName, "compression", JsonElement.class).getAsJsonObject();
@@ -166,9 +165,9 @@ public class BloscCompressionTest extends AbstractN5Test {
 				n5.setAttribute(bloscDatasetName, "compression", obj);
 
 				final DatasetAttributes info2 = n5.getDatasetAttributes(bloscDatasetName);
-				BytesCodec[] codecs2 = info2.getCodecs();
+				final DataCodecInfo[] codecs2 = info2.getDataCodecInfos();
 				assertEquals(1, codecs2.length);
-				BytesCodec compression2 = codecs2[0];
+				DataCodecInfo compression2 = codecs2[0];
 
 				Assert.assertEquals(BloscCompression.class, compression2.getClass());
 				nThreadsField = BloscCompression.class.getDeclaredField("nthreads");
@@ -194,7 +193,7 @@ public class BloscCompressionTest extends AbstractN5Test {
 
        // encode
 		ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
-		BytesCodec codec = new BloscCompression();
+		Compression codec = new BloscCompression();
 
 		byte[] encodedData = codec.encode(ReadData.from(inputData)).allBytes();
 		System.out.println( "encoded data: " + Arrays.toString(encodedData));
