@@ -36,14 +36,11 @@ import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
 import java.lang.reflect.Field;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.nio.file.Files;
 import java.util.Arrays;
-import java.util.Map;
 import java.util.Random;
 import java.util.stream.IntStream;
 
@@ -166,7 +163,6 @@ public class BloscCompressionTest extends AbstractN5Test {
 
 				final DatasetAttributes info2 = n5.getDatasetAttributes(bloscDatasetName);
 				Compression compression2 = info2.getCompression();
-
 				Assert.assertEquals(BloscCompression.class, compression2.getClass());
 				nThreadsField = BloscCompression.class.getDeclaredField("nthreads");
 				nThreadsField.setAccessible(true);

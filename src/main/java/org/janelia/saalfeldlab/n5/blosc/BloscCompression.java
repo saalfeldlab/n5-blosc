@@ -53,7 +53,6 @@
  */
 package org.janelia.saalfeldlab.n5.blosc;
 
-import java.io.IOException;
 import java.nio.ByteBuffer;
 import org.blosc.BufferSizes;
 import org.blosc.JBlosc;
@@ -102,24 +101,20 @@ public class BloscCompression implements Compression  {
 
 	private static final transient JBlosc blosc = new JBlosc();
 
-
 	public String getCname() {
 
 		return cname;
 	}
-
 
 	public int getClevel() {
 
 		return clevel;
 	}
 
-
 	public int getShuffle() {
 
 		return shuffle;
 	}
-
 
 	public int getBlocksize() {
 
@@ -131,19 +126,15 @@ public class BloscCompression implements Compression  {
 		return typesize;
 	}
 
-
-
 	public int getNthreads() {
 
 		return nthreads;
 	}
 
-
 	public void setNthreads(final int nthreads) {
 
 		this.nthreads = nthreads;
 	}
-
 
 	public BloscCompression() {
 
