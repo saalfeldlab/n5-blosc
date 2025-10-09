@@ -56,8 +56,7 @@ import org.janelia.saalfeldlab.n5.N5FSReader;
 import org.janelia.saalfeldlab.n5.N5FSWriter;
 import org.janelia.saalfeldlab.n5.N5Reader;
 import org.janelia.saalfeldlab.n5.N5Writer;
-import org.janelia.saalfeldlab.n5.codec.Codec;
-import org.janelia.saalfeldlab.n5.codec.Codec.BytesCodec;
+import org.janelia.saalfeldlab.n5.codec.DataCodec;
 import org.janelia.saalfeldlab.n5.readdata.ReadData;
 import org.junit.Assert;
 import org.junit.Ignore;
@@ -151,9 +150,8 @@ public class BloscCompressionTest extends AbstractN5Test {
 
 				final DatasetAttributes info = n5.getDatasetAttributes(bloscDatasetName);
 
-				BytesCodec[] codecs = info.getCodecs();
-				assertEquals( 1, codecs.length);
-				BytesCodec compression = codecs[0];
+				// test de-serialization
+				Compression compression = info.getCompression();
 				assertEquals(BloscCompression.class, compression.getClass());
 
 				final JsonObject obj = n5.getAttribute(bloscDatasetName, "compression", JsonElement.class).getAsJsonObject();
@@ -162,20 +160,16 @@ public class BloscCompressionTest extends AbstractN5Test {
 				nThreadsField.setAccessible(true);
 				Assert.assertEquals(10, nThreadsField.get(compression));
 
+				// manually override nthreads argument
 				obj.remove("nthreads");
 				n5.setAttribute(bloscDatasetName, "compression", obj);
 
 				final DatasetAttributes info2 = n5.getDatasetAttributes(bloscDatasetName);
-				BytesCodec[] codecs2 = info2.getCodecs();
-				assertEquals(1, codecs2.length);
-				BytesCodec compression2 = codecs2[0];
+				Compression compression2 = info2.getCompression();
 
 				Assert.assertEquals(BloscCompression.class, compression2.getClass());
 				nThreadsField = BloscCompression.class.getDeclaredField("nthreads");
 				nThreadsField.setAccessible(true);
-
-				// TODO re-enable when we decide whether the compression field will be deprecated
-//				Assert.assertEquals(1, nThreadsField.get(info2.getCompression()));
 		}
 	}
 
@@ -194,7 +188,7 @@ public class BloscCompressionTest extends AbstractN5Test {
 
        // encode
 		ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
-		Codec.BytesCodec codec = new BloscCompression();
+		DataCodec codec = new BloscCompression();
 
 		byte[] encodedData = codec.encode(ReadData.from(inputData)).allBytes();
 		System.out.println( "encoded data: " + Arrays.toString(encodedData));
@@ -209,9 +203,4 @@ public class BloscCompressionTest extends AbstractN5Test {
 		assertArrayEquals( inputData, decodedData );
 	}
 
-	@Test
-	@Override
-	@Ignore
-	public void testWriteInvalidBlock() {
-	}
 }
