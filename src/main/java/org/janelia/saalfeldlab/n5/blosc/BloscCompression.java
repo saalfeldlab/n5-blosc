@@ -59,7 +59,6 @@ import org.blosc.JBlosc;
 import org.janelia.saalfeldlab.n5.Compression;
 import org.janelia.saalfeldlab.n5.Compression.CompressionType;
 import org.janelia.saalfeldlab.n5.readdata.ReadData;
-import org.janelia.saalfeldlab.n5.serialization.NameConfig;
 
 /**
  * Compression using JBlosc (https://github.com/Blosc/JBlosc) compressors.
@@ -67,7 +66,6 @@ import org.janelia.saalfeldlab.n5.serialization.NameConfig;
  * @author Stephan Saalfeld &lt;saalfelds@janelia.hhmi.org&gt;
  */
 @CompressionType("blosc")
-@NameConfig.Name("blosc")
 public class BloscCompression implements Compression  {
 
 	public static final int NOSHUFFLE = 0;
@@ -76,27 +74,21 @@ public class BloscCompression implements Compression  {
 	public static final int AUTOSHUFFLE = -1;
 
 	@CompressionParameter
-	@NameConfig.Parameter
 	private final String cname;
 
 	@CompressionParameter
-	@NameConfig.Parameter
 	private final int clevel;
 
 	@CompressionParameter
-	@NameConfig.Parameter
 	private final int shuffle;
 
 	@CompressionParameter
-	@NameConfig.Parameter
 	private final int blocksize;
 
 	@CompressionParameter
-	@NameConfig.Parameter
 	private final int typesize;
 
 	@CompressionParameter
-	@NameConfig.Parameter
 	private int nthreads;
 
 	private static final transient JBlosc blosc = new JBlosc();
