@@ -5,7 +5,7 @@
 	<parent>
 		<groupId>org.scijava</groupId>
 		<artifactId>pom-scijava</artifactId>
-		<version>40.0.0</version>
+		<version>43.0.0</version>
 		<relativePath />
 	</parent>
 
@@ -86,7 +86,14 @@
 		<!-- NB: Deploy releases to the SciJava Maven repository. -->
 		<releaseProfiles>sign,deploy-to-scijava</releaseProfiles>
 
-		<n5.version>4.0.0-alpha-1</n5.version>
+		<!-- TODO remove when pom-scijava-base is updated -->
+		<scijava.jvm.version>8</scijava.jvm.version>
+		<scijava.jvm.build.version>[1.8.0-101,)</scijava.jvm.build.version>
+
+<!--		<maven-enforcer-plugin.version>3.0.0-M3</maven-enforcer-plugin.version>-->
+		<jacoco-maven-plugin.version>0.8.6</jacoco-maven-plugin.version>
+
+		<n5.version>4.0.0-alpha-4</n5.version>
 	</properties>
 
 	<dependencies>
