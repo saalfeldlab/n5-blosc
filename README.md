@@ -15,3 +15,38 @@ Build and install:
 ```
 mvn clean install
 ```
+
+## json serialization
+
+N5's blosc compression is serialized with a json object with
+
+Required name:
+
+* `"type"` must have value `"blosc"`
+
+Optional names:
+
+* `"clevel"` (Default : `6`)
+* `"blocksize"` (Default : `0` = auto)
+* `"cname"`    (Default: `"blosclz"`)
+    * One of ["blosclz", "lz4", "lz4hc", "zlib", "zstd"], [see here](https://blosc.org/c-blosc2/reference/utility_variables.html#compressor-names)
+* `"nthreads"` (Default: `1`)
+* `"shuffle"` (Default: `0`)
+    * 0 = NOSHUFFLE
+    * 1 = SHUFFLE
+    * 2 = BITSHUFFLE
+
+### Example
+
+```
+{
+  "compression": {
+    "type": "blosc",
+    "clevel": 6,
+    "blocksize": 0,
+    "cname": "blosclz",
+    "nthreads": 1,
+    "shuffle": 0
+  }
+}
+```
