@@ -43,10 +43,10 @@ import org.janelia.saalfeldlab.n5.readdata.ReadData;
 @CompressionType("blosc")
 public class BloscCompression implements Compression  {
 
+	// Final variables corresponding to org.blosc.Shuffle
 	public static final int NOSHUFFLE = 0;
 	public static final int SHUFFLE = 1;
 	public static final int BITSHUFFLE = 2;
-	public static final int AUTOSHUFFLE = -1;
 
 	@CompressionParameter
 	private final String cname;
